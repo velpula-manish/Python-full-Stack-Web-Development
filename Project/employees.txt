@@ -1,0 +1,8 @@
+[
+    {
+        "name": "manish kumar",
+        "age": 26,
+        "designation": "Manager",
+        "salary": 36.0
+    }
+]
