@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Management System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Employee Management System</h1>
+        </header>
+        <nav class="menu">
+            <button onclick="showSection('create')" class="menu-btn active">Create</button>
+            <button onclick="showSection('display')" class="menu-btn">Display</button>
+            <button onclick="showSection('raise')" class="menu-btn">Raise Salary</button>
+            <button onclick="exit()" class="menu-btn">Exit</button>
+        </nav>
+
+        <!-- Create Employee Section -->
+        <section id="create" class="section">
+            <h2>Create Employee</h2>
+            <div class="form-group">
+                <label for="create-name">Enter your name:</label>
+                <input type="text" id="create-name" placeholder="e.g., John Doe" required>
+            </div>
+            <div class="form-group">
+                <label for="create-age">Enter your age (18-60):</label>
+                <input type="number" id="create-age" placeholder="e.g., 25" min="18" max="60" required>
+            </div>
+            <div class="form-group">
+                <label for="create-designation">Enter your designation:</label>
+                <select id="create-designation" required>
+                    <option value="">Select Designation</option>
+                    <option value="project manager">Project Manager ($25)</option>
+                    <option value="manager">Manager ($30)</option>
+                    <option value="tester">Tester ($20)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Save this employee record?</label>
+                <button onclick="saveEmployee(true)" class="action-btn">Yes</button>
+                <button onclick="saveEmployee(false)" class="action-btn secondary">No</button>
+            </div>
+            <p id="create-message" class="message"></p>
+        </section>
+
+        <!-- Display Employees Section -->
+        <section id="display" class="section" style="display: none;">
+            <h2>Employee Records</h2>
+            <table id="employee-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Salary</th>
+                        <th>Designation</th>
+                    </tr>
+                </thead>
+                <tbody id="employee-table-body"></tbody>
+            </table>
+        </section>
+
+        <!-- Raise Salary Section -->
+        <section id="raise" class="section" style="display: none;">
+            <h2>Raise Salary</h2>
+            <div class="form-group">
+                <label for="raise-name">Enter the name of the employee:</label>
+                <input type="text" id="raise-name" placeholder="e.g., John Doe" required>
+            </div>
+            <div class="form-group">
+                <label for="raise-percentage">Enter percentage hike (max 30%):</label>
+                <input type="number" id="raise-percentage" placeholder="e.g., 15" min="0" max="30" required>
+            </div>
+            <button onclick="updateSalary()" class="action-btn">Update Salary</button>
+            <p id="raise-message" class="message"></p>
+        </section>
+
+        <!-- Exit Section -->
+        <section id="exit-message" class="section" style="display: none;">
+            <h2>Thank you for using Applications</h2>
+            <button onclick="window.location.reload()" class="action-btn">Restart</button>
+        </section>
+    </div>
+
+    <script>
+        let employees = JSON.parse(localStorage.getItem('employees')) || [];
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => section.style.display = 'none');
+            document.getElementById(sectionId).style.display = 'block';
+            document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`button[onclick="showSection('${sectionId}')"]`).classList.add('active');
+            if (sectionId === 'display') displayEmployees();
+            clearMessages();
+        }
+
+        function clearMessages() {
+            document.getElementById('create-message').textContent = '';
+            document.getElementById('raise-message').textContent = '';
+        }
+
+        function saveEmployee(confirm) {
+            if (!confirm) {
+                document.getElementById('create-message').textContent = 'Employee record not saved.';
+                return;
+            }
+
+            const name = document.getElementById('create-name').value.trim();
+            const age = parseInt(document.getElementById('create-age').value);
+            const designation = document.getElementById('create-designation').value;
+
+            if (!name) {
+                document.getElementById('create-message').textContent = 'Name cannot be empty.';
+                return;
+            }
+            if (isNaN(age) || age < 18 || age > 60) {
+                document.getElementById('create-message').textContent = 'Age must be between 18 and 60.';
+                return;
+            }
+            if (!designation) {
+                document.getElementById('create-message').textContent = 'Please select a valid designation.';
+                return;
+            }
+
+            const salaryMap = {
+                'project manager': 25,
+                'manager': 30,
+                'tester': 20
+            };
+            const employee = {
+                name,
+                age,
+                designation: designation.replace(/(^\w|\s\w)/g, c => c.toUpperCase()),
+                salary: salaryMap[designation]
+            };
+            employees.push(employee);
+            localStorage.setItem('employees', JSON.stringify(employees));
+            document.getElementById('create-message').textContent = 'Employee record saved successfully!';
+            document.getElementById('create-name').value = '';
+            document.getElementById('create-age').value = '';
+            document.getElementById('create-designation').value = '';
+        }
+
+        function displayEmployees() {
+            const tableBody = document.getElementById('employee-table-body');
+            tableBody.innerHTML = '';
+            if (employees.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4">No employee records found.</td></tr>';
+                return;
+            }
+            employees.forEach(emp => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${emp.name}</td>
+                    <td>${emp.age}</td>
+                    <td>$${emp.salary.toFixed(2)}</td>
+                    <td>${emp.designation}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function updateSalary() {
+            const name = document.getElementById('raise-name').value.trim();
+            const percentage = parseFloat(document.getElementById('raise-percentage').value);
+            const message = document.getElementById('raise-message');
+
+            if (!name) {
+                message.textContent = 'Please enter a valid name.';
+                return;
+            }
+            if (isNaN(percentage) || percentage < 0 || percentage > 30) {
+                message.textContent = 'Percentage must be between 0 and 30.';
+                return;
+            }
+
+            const employee = employees.find(emp => emp.name.toLowerCase() === name.toLowerCase());
+            if (!employee) {
+                message.textContent = 'Employee not found.';
+                return;
+            }
+
+            employee.salary = Math.round(employee.salary * (1 + percentage / 100) * 100) / 100;
+            localStorage.setItem('employees', JSON.stringify(employees));
+            message.textContent = `Salary updated successfully! New salary for ${employee.name}: $${employee.salary.toFixed(2)}`;
+            document.getElementById('raise-name').value = '';
+            document.getElementById('raise-percentage').value = '';
+        }
+
+        function exit() {
+            document.querySelectorAll('.section').forEach(section => section.style.display = 'none');
+            document.getElementById('exit-message').style.display = 'block';
+            document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+        }
+
+        // Initialize with create section visible
+        showSection('create');
+    </script>
+</body>
+</html>
